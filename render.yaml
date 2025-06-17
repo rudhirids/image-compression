@@ -3,11 +3,9 @@ services:
     name: image-compression-service
     env: node
     plan: free
-    branch: master  # or main depending on your repo
     buildCommand: "npm install"
-    startCommand: "npm start"
+    startCommand: "node index.js"
     envVars:
       - key: NODE_ENV
         value: production
     autoDeploy: true
-
