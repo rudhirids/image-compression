@@ -7,24 +7,19 @@ const bodyParser = require("body-parser");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// For JSON body parsing
 app.use(bodyParser.json());
 
-// For multipart form uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Combined POST route
 app.post("/compress-image", upload.single("image"), async (req, res) => {
   try {
     let imageBuffer;
 
     if (req.file) {
-      // If image file is uploaded
       console.log("Image uploaded via form.");
       imageBuffer = req.file.buffer;
     } else if (req.body.url) {
-      // If image URL is provided
       console.log("Image fetched via URL.");
       const response = await axios({
         url: req.body.url,
@@ -36,12 +31,24 @@ app.post("/compress-image", upload.single("image"), async (req, res) => {
       return res.status(400).send("No image file or URL provided");
     }
 
-    // Compress the image
-    const compressedBuffer = await sharp(imageBuffer)
-      .jpeg({ quality: 50 })
+    const imageSharp = sharp(imageBuffer);
+
+    const metadata = await imageSharp.metadata();
+
+    // Only resize if image is wider than 1600px
+    if (metadata.width > 1600) {
+      imageSharp.resize({ width: 1600 });
+    }
+
+    const compressedBuffer = await imageSharp
+      .webp({
+        quality: 50,
+        effort: 6,
+      })
+      .withMetadata(false)
       .toBuffer();
 
-    res.set("Content-Type", "image/jpeg");
+    res.set("Content-Type", "image/webp");
     res.send(compressedBuffer);
   } catch (error) {
     console.error(error);
@@ -50,5 +57,5 @@ app.post("/compress-image", upload.single("image"), async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Image compression server running on port ${PORT}`);
+  console.log(`Optimized image compression server running on port ${PORT}`);
 });
