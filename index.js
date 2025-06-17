@@ -43,7 +43,7 @@ app.post("/compress-image", upload.single("image"), async (req, res) => {
     const compressedBuffer = await imageSharp
       .webp({
         quality: 100,
-        effort: 7,
+        effort: 6,
       })
       .withMetadata(false)
       .toBuffer();
