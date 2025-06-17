@@ -1,29 +1,22 @@
 const express = require("express");
 const sharp = require("sharp");
-const axios = require("axios");
-const bodyParser = require("body-parser");
+const multer = require("multer");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+// Set up multer for file uploads (in memory)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-app.get("/compress-image", async (req, res) => {
+// POST endpoint for image upload & compression
+app.post("/compress-image", upload.single("image"), async (req, res) => {
   try {
-    const imageUrl = req.query.url; // <-- use query for GET
-    if (!imageUrl) {
-      return res.status(400).send("Missing image URL");
+    if (!req.file) {
+      return res.status(400).send("No image file uploaded");
     }
 
-    const response = await axios({
-      url: imageUrl,
-      method: "GET",
-      responseType: "arraybuffer",
-    });
-
-    const imageBuffer = Buffer.from(response.data);
-
-    const compressedBuffer = await sharp(imageBuffer)
-      .jpeg({ quality: 50 }) // adjust quality as needed
+    const compressedBuffer = await sharp(req.file.buffer)
+      .jpeg({ quality: 50 })
       .toBuffer();
 
     res.set("Content-Type", "image/jpeg");
