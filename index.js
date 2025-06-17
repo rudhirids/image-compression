@@ -3,17 +3,17 @@ const sharp = require("sharp");
 const axios = require("axios");
 const bodyParser = require("body-parser");
 const app = express();
-const path = require("path");
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 app.use(bodyParser.json());
+
 app.get("/compress-image", async (req, res) => {
   try {
-    const imageUrl = req.body.url;
+    const imageUrl = req.query.url; // <-- use query for GET
     if (!imageUrl) {
       return res.status(400).send("Missing image URL");
     }
 
-    // Fetch the image from the URL
     const response = await axios({
       url: imageUrl,
       method: "GET",
@@ -22,14 +22,10 @@ app.get("/compress-image", async (req, res) => {
 
     const imageBuffer = Buffer.from(response.data);
 
-    const outputPath = path.join("./", `compressed_image.jpeg`);
-    // Use sharp to compress image without losing quality
-    // For lossless compression, convert PNG/JPEG to WebP lossless or optimize JPEG/PNG
     const compressedBuffer = await sharp(imageBuffer)
-      .jpeg({ nearLossless: true, quality: 10, effort: 6 }) // lossless WebP compression
-      .toFile(outputPath);
+      .jpeg({ quality: 50 }) // adjust quality as needed
+      .toBuffer();
 
-    // Set appropriate headers and send compressed image
     res.set("Content-Type", "image/jpeg");
     res.send(compressedBuffer);
   } catch (error) {
@@ -38,6 +34,6 @@ app.get("/compress-image", async (req, res) => {
   }
 });
 
-app.listen(PORT, "localhost", () => {
+app.listen(PORT, () => {
   console.log(`Image compression server running on port ${PORT}`);
 });
